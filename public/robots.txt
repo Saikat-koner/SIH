@@ -1,0 +1,14 @@
+# TerraGIS - National Land & Spatial Project Management Platform
+# Robots.txt for Search Engine Indexing and Cadastral Transparency
+User-agent: *
+Allow: /
+Allow: /api/
+Allow: /citizen
+Allow: /bhulekh
+Allow: /property-card
+
+# Disallow private field surveyor raw telemetry and sensitive cryptographic tokens
+Disallow: /admin/security-tokens/
+Disallow: /private/
+
+Sitemap: https://ais-pre-tp2n4rxb2bpt5jo7obnntt-141169007848.asia-east1.run.app/sitemap.xml

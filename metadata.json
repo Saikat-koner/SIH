@@ -1,0 +1,6 @@
+{
+  "name": "TerraGIS - Land & Spatial Project Management",
+  "description": "Spatial land management and GIS platform featuring dual Admin GIS and Citizen Land Services portals, interactive polygon mapping, certified digital property cards (E-Gharouni), real-time cadastral geofencing, and grievance redressal.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
