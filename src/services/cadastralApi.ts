@@ -247,14 +247,58 @@ export async function verifyParcelOnBackend(parcelNumber: string): Promise<Parce
 }
 
 /**
- * Fetches platform stats.
+ * Submits an official citizen support / grievance inquiry ticket to the backend.
  */
-export async function fetchPlatformStats(): Promise<PlatformStats | null> {
+export async function submitSupportTicket(payload: {
+  name: string;
+  email: string;
+  phone?: string;
+  category?: string;
+  subject?: string;
+  message: string;
+}): Promise<{ success: boolean; ticket: any; message: string }> {
+  const res = await fetch('/api/support/ticket', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to lodge support ticket');
+  }
+  return data;
+}
+
+/**
+ * Queries the backend automated cadastral knowledge engine.
+ */
+export async function queryCadastralAssistant(query: string): Promise<{ reply: string; source?: string }> {
   try {
-    const res = await fetch('/api/stats');
-    if (!res.ok) return null;
+    const res = await fetch('/api/support/ai-query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
-  } catch {
-    return null;
+  } catch (err) {
+    return {
+      reply: 'For general inquiries, consult your local Tehsil Revenue Inspector or dial the National Land Governance Toll-Free Helpline at 1800-180-1551.',
+    };
   }
 }
+
+/**
+ * Searches parcels on backend by Khasra number, owner, village, or district.
+ */
+export async function searchKhasraOnBackend(query: string): Promise<LandParcel[]> {
+  try {
+    const res = await fetch(`/api/khasra/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.results || [];
+  } catch {
+    return [];
+  }
+}
+

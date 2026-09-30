@@ -866,7 +866,146 @@ app.get('/api/stats', (_req: Request, res: Response) => {
 });
 
 // ==========================================
-// 8. VITE MIDDLEWARE & STATIC ASSETS
+// 8. CITIZEN SUPPORT & TICKETING API
+// ==========================================
+
+export interface SupportTicket {
+  id: string;
+  ticketNumber: string;
+  name: string;
+  email: string;
+  phone?: string;
+  category: string;
+  subject: string;
+  message: string;
+  status: 'received' | 'in_review' | 'resolved';
+  priority: 'normal' | 'urgent';
+  createdAt: string;
+}
+
+let supportTicketsRegistry: SupportTicket[] = [
+  {
+    id: 'tkt_001',
+    ticketNumber: 'NIC-TKT-2024-8841',
+    name: 'Govind Narayan Patil',
+    email: 'govind.patil@agri.in',
+    phone: '9822334455',
+    category: 'E-Gharouni Download Issue',
+    subject: 'Satbara 7/12 digital seal verification delay',
+    message: 'Generated property card for parcel MH-PUN-HAV-2024-142B, requesting official Tehsil re-verification seal.',
+    status: 'resolved',
+    priority: 'normal',
+    createdAt: '2024-03-01T10:30:00Z',
+  },
+  {
+    id: 'tkt_002',
+    ticketNumber: 'NIC-TKT-2024-9104',
+    name: 'Shyamala Rao',
+    email: 'shyamala.rao@rural.org',
+    phone: '9845012345',
+    category: 'Mutation Status Enquiry',
+    subject: 'Namantaran deed timeline query for Haveli village',
+    message: 'Registered deed mutation filed on Feb 12th, seeking update on Sub-Registrar endorsement.',
+    status: 'in_review',
+    priority: 'normal',
+    createdAt: '2024-03-05T14:20:00Z',
+  },
+];
+
+/**
+ * POST /api/support/ticket
+ * Lodges a support / citizen query ticket and returns an official ticket number.
+ */
+app.post('/api/support/ticket', (req: Request, res: Response) => {
+  const { name, email, phone, category, subject, message } = req.body;
+  if (!message || (!name && !email)) {
+    return res.status(400).json({ error: 'Name, email, and inquiry description are required.' });
+  }
+
+  const ticketNumber = `NIC-TKT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const ticket: SupportTicket = {
+    id: `tkt_${Date.now()}`,
+    ticketNumber,
+    name: name || 'Citizen Requester',
+    email: email || 'citizen.helpdesk@nic.in',
+    phone: phone || '',
+    category: category || 'General Land Records Inquiry',
+    subject: subject || (message.length > 50 ? message.slice(0, 50) + '...' : message),
+    message,
+    status: 'received',
+    priority: 'normal',
+    createdAt: new Date().toISOString(),
+  };
+
+  supportTicketsRegistry.unshift(ticket);
+  res.status(201).json({
+    success: true,
+    ticket,
+    message: `Official support request logged successfully. Tracking ID: ${ticketNumber}. A Revenue Officer will follow up within 24-48 business hours.`,
+  });
+});
+
+/**
+ * GET /api/support/tickets
+ * Retrieves logged support tickets.
+ */
+app.get('/api/support/tickets', (_req: Request, res: Response) => {
+  res.json({ tickets: supportTicketsRegistry });
+});
+
+/**
+ * POST /api/support/ai-query
+ * Automated cadastral knowledge assistant query endpoint.
+ */
+app.post('/api/support/ai-query', (req: Request, res: Response) => {
+  const { query } = req.body;
+  const userQ = (query || '').toLowerCase();
+  let reply = 'For official statutory procedures, please consult your local Tehsil Revenue Inspector or dial the National Land Governance Toll-Free Helpline at 1800-180-1551.';
+
+  if (userQ.includes('card') || userQ.includes('gharouni') || userQ.includes('svamitva') || userQ.includes('property')) {
+    reply = 'Official Digital Property Cards (E-Gharouni / ई-घरौनी) are generated under the SVAMITVA scheme following CORS RTK drone cadastral surveys. They confer legal title for inhabited village abadi plots and are recognized by all scheduled commercial banks for institutional credit.';
+  } else if (userQ.includes('dispute') || userQ.includes('encroach') || userQ.includes('boundary') || userQ.includes('grievance')) {
+    reply = 'Boundary disputes and encroachment appeals can be lodged in the Citizen Services Portal under "Grievances". A tamper-evident digital token is issued and a joint drone re-verification survey is scheduled within 14 statutory days.';
+  } else if (userQ.includes('compensation') || userQ.includes('payout') || userQ.includes('highway') || userQ.includes('rfctlarr')) {
+    reply = 'Under the RFCTLARR Act 2013, acquired land compensation equals the notified Circle Rate multiplied by the rural factor (1.5x - 2.0x), plus a statutory 100% Solatium and 12% per-annum interest disbursed directly via Aadhaar Direct Benefit Transfer (DBT).';
+  } else if (userQ.includes('mutation') || userQ.includes('namantaran') || userQ.includes('transfer')) {
+    reply = 'E-Mutation (Namantaran) workflows automatically process registered deeds through Sub-Registrar Office integration, updating Revenue Form VII-XII / Khatauni within 30 statutory days without manual clerk intervention.';
+  } else if (userQ.includes('offline') || userQ.includes('sync') || userQ.includes('internet')) {
+    reply = 'The portal features decentralized offline-first caching. Field survey measurements recorded in remote areas without cellular coverage synchronize automatically through cryptographic SHA-256 conflict resolution once connectivity resumes.';
+  }
+
+  res.json({
+    reply,
+    timestamp: new Date().toISOString(),
+    source: 'National Cadastre Automated Knowledge Engine (NIC / Survey of India)',
+  });
+});
+
+/**
+ * GET /api/khasra/search
+ * Search parcels by Khasra number, owner, village, or district.
+ */
+app.get('/api/khasra/search', (req: Request, res: Response) => {
+  const q = String(req.query.q || '').trim().toLowerCase();
+  if (!q) {
+    return res.json({ results: cachedParcels.slice(0, 10) });
+  }
+
+  const results = cachedParcels.filter((p) => {
+    return (
+      (p.parcelNumber && p.parcelNumber.toLowerCase().includes(q)) ||
+      (p.owner && p.owner.toLowerCase().includes(q)) ||
+      (p.village && p.village.toLowerCase().includes(q)) ||
+      (p.district && p.district.toLowerCase().includes(q)) ||
+      (p.id && p.id.toLowerCase().includes(q))
+    );
+  });
+
+  res.json({ count: results.length, results });
+});
+
+// ==========================================
+// 9. VITE MIDDLEWARE & STATIC ASSETS
 // ==========================================
 
 async function startServer() {

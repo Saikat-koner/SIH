@@ -32,6 +32,8 @@ import {
 import { Users, Sparkles, MapPin, Globe2, ShieldCheck, ArrowRight, Activity, Database, Landmark, LogIn, LogOut, User } from 'lucide-react';
 import { HomePage } from './components/HomePage';
 import { AuthModal } from './components/AuthModal';
+import { FileCode, Code2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 import {
   LandParcel,
@@ -708,279 +710,226 @@ export default function App() {
             </div>
           )}
 
-          {/* Global Navigation Bar for Admin GIS */}
-          {portalMode === 'admin' && (
-            <Navbar
-              currentRole={currentRole}
-              onRoleChange={setCurrentRole}
-              networkMode={networkMode}
-              onNetworkModeChange={setNetworkMode}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              pendingSyncCount={pendingSyncCount}
-              unreadNotifsCount={unreadNotifsCount}
-              onToggleNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAddParcel={() => setIsAddParcelOpen(true)}
-              onOpenTestModal={() => setActiveTab('tests')}
-              onTriggerSync={handleTriggerSync}
-              isSyncing={isSyncing}
+          {/* Global Navigation Bar for Admin GIS with Smooth Motion Entrance */}
+          <AnimatePresence>
+            {portalMode === 'admin' && (
+              <motion.div
+                key="admin-navbar-container"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <Navbar
+                  currentRole={currentRole}
+                  onRoleChange={setCurrentRole}
+                  networkMode={networkMode}
+                  onNetworkModeChange={setNetworkMode}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  pendingSyncCount={pendingSyncCount}
+                  unreadNotifsCount={unreadNotifsCount}
+                  onToggleNotifications={() => setIsNotificationsOpen(true)}
+                  onOpenAddParcel={() => setIsAddParcelOpen(true)}
+                  onOpenTestModal={() => setActiveTab('tests')}
+                  onTriggerSync={handleTriggerSync}
+                  isSyncing={isSyncing}
+                  currentLang={currentLang}
+                  onLanguageChange={handleLanguageChange}
+                  portalMode={portalMode}
+                  onPortalModeChange={handlePortalModeChange}
+                  activeDataset={activeDataset}
+                  onDatasetChange={handleDatasetChange}
+                  onOpenSupabaseSync={() => setIsSupabaseModalOpen(true)}
+                  supabaseStatus={supabaseStatus}
+                  onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+                  onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+                  theme={theme}
+                  onToggleTheme={handleToggleTheme}
+                  lastAutosavedText={lastAutosavedText}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+      {/* Conditional Portal Rendering with Smooth Framer Motion Entrance Animations */}
+      <AnimatePresence mode="wait" initial={false}>
+        {portalMode === 'home' && (
+          <motion.div
+            key="portal-home"
+            initial={{ opacity: 0, y: 14, filter: 'blur(3px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -14, filter: 'blur(3px)' }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col w-full min-h-0"
+          >
+            <HomePage
+              onOpenCitizenPortal={() => handlePortalModeChange('citizen')}
+              onOpenAdminPortal={() => handlePortalModeChange('admin')}
+              onOpenAuth={handleOpenAuth}
               currentLang={currentLang}
               onLanguageChange={handleLanguageChange}
-              portalMode={portalMode}
-              onPortalModeChange={handlePortalModeChange}
-              activeDataset={activeDataset}
-              onDatasetChange={handleDatasetChange}
-              onOpenSupabaseSync={() => setIsSupabaseModalOpen(true)}
-              supabaseStatus={supabaseStatus}
-              onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-              onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              parcels={parcels}
               theme={theme}
               onToggleTheme={handleToggleTheme}
-              lastAutosavedText={lastAutosavedText}
             />
-          )}
+          </motion.div>
+        )}
 
-      {/* SIH1648 / DILRMP Portal Compliance & Pitch Deck Header Ribbon */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white border-b border-emerald-800/40 px-4 py-2.5 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 text-xs">
-          <div className="flex items-center gap-2.5 flex-wrap justify-center md:justify-start">
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[11px] border border-emerald-500/30">
-              SIH1648 / SVAMITVA
-            </span>
-            <span className="text-slate-300 font-medium">
-              National Cadastral Governance Portal | 8 Indian Languages Supported
-            </span>
-          </div>
+        {portalMode === 'citizen' && (
+          <motion.div
+            key="portal-citizen"
+            initial={{ opacity: 0, y: 14, filter: 'blur(3px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -14, filter: 'blur(3px)' }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col w-full min-h-0"
+          >
+            <CitizenPortal
+              parcels={parcels}
+              onSwitchToAdmin={() => handlePortalModeChange('admin')}
+              onSwitchToHome={() => handlePortalModeChange('home')}
+              onLocateOnMap={(parcel) => {
+                handlePortalModeChange('admin');
+                handleLocateOnMap(parcel);
+              }}
+              currentLang={currentLang}
+              onLanguageChange={handleLanguageChange}
+              theme={theme}
+              onToggleTheme={handleToggleTheme}
+            />
+          </motion.div>
+        )}
 
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            {/* Quick Vernacular Shortcuts */}
-            <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400">
-              <span>Quick:</span>
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className={`px-1.5 py-0.5 rounded hover:text-white transition ${
-                  currentLang === 'en' ? 'bg-emerald-700 text-white font-bold' : 'text-slate-300'
-                }`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => handleLanguageChange('hi')}
-                className={`px-1.5 py-0.5 rounded hover:text-white transition ${
-                  currentLang === 'hi' ? 'bg-emerald-700 text-white font-bold' : 'text-slate-300'
-                }`}
-              >
-                हिन्दी
-              </button>
-              <button
-                onClick={() => handleLanguageChange('mr')}
-                className={`px-1.5 py-0.5 rounded hover:text-white transition ${
-                  currentLang === 'mr' ? 'bg-emerald-700 text-white font-bold' : 'text-slate-300'
-                }`}
-              >
-                मराठी
-              </button>
-              <button
-                onClick={() => handleLanguageChange('bn')}
-                className={`px-1.5 py-0.5 rounded hover:text-white transition ${
-                  currentLang === 'bn' ? 'bg-emerald-700 text-white font-bold' : 'text-slate-300'
-                }`}
-              >
-                বাংলা
-              </button>
-            </div>
+        {portalMode === 'admin' && (
+          <motion.div
+            key="portal-admin"
+            initial={{ opacity: 0, y: 14, filter: 'blur(3px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -14, filter: 'blur(3px)' }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col w-full min-h-0"
+          >
+            {/* Cadastre KPI Stats Bar */}
+            <StatsBar
+              parcels={parcels}
+              markers={markers}
+              currentRole={currentRole}
+              pendingSyncCount={pendingSyncCount}
+            />
 
-            {/* Direct Tracker & Compensation Shortcut */}
-            {portalMode === 'admin' && (
-              <button
-                onClick={() => setActiveTab('lifecycle')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition shadow-xs ${
-                  activeTab === 'lifecycle'
-                    ? 'bg-white text-emerald-950 shadow-sm'
-                    : 'bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60'
-                }`}
-              >
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Projects & Payouts</span>
-              </button>
-            )}
+            {/* Main View Display */}
+            <main className="flex-1 flex flex-col">
+              <AnimatePresence mode="wait" initial={false}>
+                {activeTab === 'map' && (
+                  <motion.div
+                    key="tab-map"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 flex flex-col w-full min-h-0"
+                  >
+                    <GISMap
+                      parcels={parcels}
+                      markers={markers}
+                      selectedParcelId={selectedParcel?.id || null}
+                      onSelectParcel={(parcel) => setSelectedParcel(parcel)}
+                      onSelectMarker={(marker) => {
+                        if (marker.parcelId) {
+                          const matched = parcels.find((p) => p.id === marker.parcelId);
+                          if (matched) setSelectedParcel(matched);
+                        }
+                      }}
+                      onOpenAddParcel={() => setIsAddParcelOpen(true)}
+                      canEdit={checkUserPermission(currentRole, 'edit_parcel')}
+                      onNavigateToLifecycle={() => setActiveTab('lifecycle')}
+                    />
+                  </motion.div>
+                )}
 
-            {/* Sovereign 3-Way Portal Mode Switcher (Home / Citizen / Admin) */}
-            <div className="flex items-center bg-slate-950/80 p-0.5 rounded-lg border border-emerald-500/50 shadow-inner">
-              <button
-                id="ribbon-btn-home-portal"
-                onClick={() => handlePortalModeChange('home')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition ${
-                  portalMode === 'home'
-                    ? 'bg-amber-400 text-slate-950 shadow-sm'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title="Return to Sovereign Front Page"
-              >
-                <Landmark className="w-3.5 h-3.5" />
-                <span>Home (मुख्य पृष्ठ)</span>
-              </button>
+                {activeTab === 'table' && (
+                  <motion.div
+                    key="tab-table"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 flex flex-col w-full min-h-0"
+                  >
+                    <ParcelTable
+                      parcels={parcels}
+                      onSelectParcel={(parcel) => setSelectedParcel(parcel)}
+                      onLocateOnMap={handleLocateOnMap}
+                      currentRole={currentRole}
+                    />
+                  </motion.div>
+                )}
 
-              <button
-                id="ribbon-btn-citizen-portal"
-                onClick={() => handlePortalModeChange('citizen')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition ${
-                  portalMode === 'citizen'
-                    ? 'bg-emerald-400 text-slate-950 shadow-sm'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title="Switch to Public Citizen & Landowner Portal"
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Citizen (नागरिक)</span>
-              </button>
+                {activeTab === 'lifecycle' && (
+                  <motion.div
+                    key="tab-lifecycle"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 flex flex-col w-full min-h-0"
+                  >
+                    <LifecycleMonitoringDashboard
+                      currentRole={currentRole}
+                      currentLang={currentLang}
+                      onSelectParcelFromTracker={(parcelId) => {
+                        const matched = parcels.find((p) => p.id === parcelId);
+                        if (matched) {
+                          setActiveTab('map');
+                          setSelectedParcel(matched);
+                        }
+                      }}
+                    />
+                  </motion.div>
+                )}
 
-              <button
-                id="ribbon-btn-admin-portal"
-                onClick={() => handlePortalModeChange('admin')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition ${
-                  portalMode === 'admin'
-                    ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title="Switch to Admin GIS & Revenue Officer Portal"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin GIS (प्रशासन)</span>
-              </button>
-            </div>
+                {activeTab === 'sync' && (
+                  <motion.div
+                    key="tab-sync"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 flex flex-col w-full min-h-0"
+                  >
+                    <OfflineSyncPanel
+                      queue={offlineQueue}
+                      networkMode={networkMode}
+                      onNetworkModeChange={setNetworkMode}
+                      onTriggerSync={handleTriggerSync}
+                      isSyncing={isSyncing}
+                      onClearQueue={() => setOfflineQueue([])}
+                      onAddSimulatedOfflineMutation={handleAddSimulatedOfflineMutation}
+                    />
+                  </motion.div>
+                )}
 
-            {/* Current Auth User Status */}
-            {currentUser ? (
-              <div className="flex items-center gap-2 bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-1 rounded-lg">
-                <User className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-semibold text-white text-xs">{currentUser.name.split(' ')[0]}</span>
-                <span className="text-[10px] text-emerald-300 capitalize">({currentUser.role})</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-[10px] text-slate-300 hover:text-rose-300 ml-1 underline cursor-pointer"
-                  title="Sign Out"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => handleOpenAuth('citizen', 'login')}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Conditional Portal Rendering: Home Page vs Citizen Portal vs Admin Portal */}
-      {portalMode === 'home' ? (
-        <HomePage
-          onOpenCitizenPortal={() => {
-            if (!currentUser) {
-              handleOpenAuth('citizen', 'login');
-            } else {
-              handlePortalModeChange('citizen');
-            }
-          }}
-          onOpenAdminPortal={() => {
-            if (!currentUser || currentUser.role === 'citizen') {
-              handleOpenAuth('admin', 'login');
-            } else {
-              handlePortalModeChange('admin');
-            }
-          }}
-          onOpenAuth={handleOpenAuth}
-          currentLang={currentLang}
-          onLanguageChange={handleLanguageChange}
-          currentUser={currentUser}
-          onLogout={handleLogout}
-        />
-      ) : portalMode === 'citizen' ? (
-        <CitizenPortal
-          parcels={parcels}
-          onSwitchToAdmin={() => handlePortalModeChange('admin')}
-          onSwitchToHome={() => handlePortalModeChange('home')}
-          onLocateOnMap={(parcel) => {
-            handlePortalModeChange('admin');
-            handleLocateOnMap(parcel);
-          }}
-          currentLang={currentLang}
-          onLanguageChange={handleLanguageChange}
-        />
-      ) : (
-        <>
-          {/* Cadastre KPI Stats Bar */}
-          <StatsBar
-            parcels={parcels}
-            markers={markers}
-            currentRole={currentRole}
-            pendingSyncCount={pendingSyncCount}
-          />
-
-          {/* Main View Display */}
-          <main className="flex-1 flex flex-col">
-            {activeTab === 'map' && (
-              <GISMap
-                parcels={parcels}
-                markers={markers}
-                selectedParcelId={selectedParcel?.id || null}
-                onSelectParcel={(parcel) => setSelectedParcel(parcel)}
-                onSelectMarker={(marker) => {
-                  if (marker.parcelId) {
-                    const matched = parcels.find((p) => p.id === marker.parcelId);
-                    if (matched) setSelectedParcel(matched);
-                  }
-                }}
-                onOpenAddParcel={() => setIsAddParcelOpen(true)}
-                canEdit={checkUserPermission(currentRole, 'edit_parcel')}
-                onNavigateToLifecycle={() => setActiveTab('lifecycle')}
-              />
-            )}
-
-            {activeTab === 'table' && (
-              <ParcelTable
-                parcels={parcels}
-                onSelectParcel={(parcel) => setSelectedParcel(parcel)}
-                onLocateOnMap={handleLocateOnMap}
-                currentRole={currentRole}
-              />
-            )}
-
-            {activeTab === 'lifecycle' && (
-              <LifecycleMonitoringDashboard
-                currentRole={currentRole}
-                currentLang={currentLang}
-                onSelectParcelFromTracker={(parcelId) => {
-                  const matched = parcels.find((p) => p.id === parcelId);
-                  if (matched) {
-                    setActiveTab('map');
-                    setSelectedParcel(matched);
-                  }
-                }}
-              />
-            )}
-
-            {activeTab === 'sync' && (
-              <OfflineSyncPanel
-                queue={offlineQueue}
-                networkMode={networkMode}
-                onNetworkModeChange={setNetworkMode}
-                onTriggerSync={handleTriggerSync}
-                isSyncing={isSyncing}
-                onClearQueue={() => setOfflineQueue([])}
-                onAddSimulatedOfflineMutation={handleAddSimulatedOfflineMutation}
-              />
-            )}
-
-            {activeTab === 'tests' && <AutomatedTestModal parcels={parcels} />}
-          </main>
-        </>
-      )}
+                {activeTab === 'tests' && (
+                  <motion.div
+                    key="tab-tests"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 flex flex-col w-full min-h-0"
+                  >
+                    <AutomatedTestModal parcels={parcels} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </main>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals & Drawers */}
       {selectedParcel && (
@@ -1090,8 +1039,17 @@ export default function App() {
           defaultTab={legalModalTab}
         />
 
-        {/* Floating Land Help, FAQ & AI Assistant Desk */}
-        <SupportFloat onOpenLegal={handleOpenLegal} />
+        {/* Floating Land Help, FAQ & AI Assistant Desk (Movable and Removable by Client) */}
+        <SupportFloat
+          onOpenLegal={handleOpenLegal}
+          onWidgetRemoved={() =>
+            addToast({
+              type: 'info',
+              title: 'Helpdesk Hidden',
+              message: 'Help & Support widget removed from screen. Press Alt+H or click the restore button to show it again.',
+            })
+          }
+        />
 
         {/* Scroll Reading Progress Bar & Back to Top Button */}
         <ScrollTopAndProgress />

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   HelpCircle,
-  MessageSquare,
-  Sparkles,
   ChevronDown,
   Phone,
   Mail,
@@ -10,28 +9,90 @@ import {
   X,
   Copy,
   Check,
-  Send,
   Building2,
   BookOpen,
+  GripVertical,
+  RotateCcw,
+  TicketCheck,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Send,
 } from 'lucide-react';
+import { submitSupportTicket } from '../services/cadastralApi';
 
 interface SupportFloatProps {
   onOpenLegal: (tab: 'privacy' | 'terms' | 'contact') => void;
+  onWidgetRemoved?: () => void;
 }
 
-export const SupportFloat: React.FC<SupportFloatProps> = ({ onOpenLegal }) => {
+export const SupportFloat: React.FC<SupportFloatProps> = ({ onOpenLegal, onWidgetRemoved }) => {
+  // Widget removal state (client can remove or restore widget anytime)
+  const [isRemoved, setIsRemoved] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('terragis_support_widget_removed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'faq' | 'assistant' | 'contacts'>('faq');
+  const [activeTab, setActiveTab] = useState<'contacts' | 'faq' | 'ticket'>('contacts');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Quick AI Chat simulation (cadastral rules)
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
-    {
-      role: 'assistant',
-      text: 'Namaste! I am the TerraGIS Cadastral AI assistant. Ask me anything about Khasra boundaries, E-Gharouni property cards, RFCTLARR compensation, or survey dispute resolution.',
-    },
-  ]);
+  // Position reset counter
+  const [dragKey, setDragKey] = useState(0);
+
+  // Support Ticket Form State
+  const [ticketForm, setTicketForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    category: 'E-Gharouni Property Card',
+    subject: '',
+    message: '',
+  });
+  const [ticketStatus, setTicketStatus] = useState<{
+    submitting: boolean;
+    successTicket?: any;
+    errorMessage?: string;
+  }>({ submitting: false });
+
+  // Listen for Alt+H keyboard shortcut to toggle or restore widget
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        setIsRemoved((prev) => {
+          const next = !prev;
+          try {
+            localStorage.setItem('terragis_support_widget_removed', String(next));
+          } catch {}
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleRemoveWidget = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsRemoved(true);
+    setIsOpen(false);
+    try {
+      localStorage.setItem('terragis_support_widget_removed', 'true');
+    } catch {}
+    if (onWidgetRemoved) onWidgetRemoved();
+  };
+
+  const handleRestoreWidget = () => {
+    setIsRemoved(false);
+    setIsOpen(true);
+    try {
+      localStorage.setItem('terragis_support_widget_removed', 'false');
+    } catch {}
+  };
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -39,261 +100,414 @@ export const SupportFloat: React.FC<SupportFloatProps> = ({ onOpenLegal }) => {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleSendChat = (e: React.FormEvent) => {
+  const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    if (!ticketForm.message.trim() || !ticketForm.name.trim() || !ticketForm.phone.trim()) {
+      setTicketStatus({
+        submitting: false,
+        errorMessage: 'Please enter your Name, Phone Number, and details of your request.',
+      });
+      return;
+    }
 
-    const userQ = chatInput.trim();
-    const newMessages = [...chatMessages, { role: 'user' as const, text: userQ }];
-    setChatMessages(newMessages);
-    setChatInput('');
+    setTicketStatus({ submitting: true, errorMessage: undefined });
 
-    // Generate intelligent response based on cadastral keywords
-    setTimeout(() => {
-      let reply = 'For general inquiries, please contact your local Tehsil Revenue Inspector or call our toll-free helpline at 1800-180-1551.';
-      const lower = userQ.toLowerCase();
-
-      if (lower.includes('card') || lower.includes('gharouni') || lower.includes('svamitva') || lower.includes('property')) {
-        reply = 'Digital Property Cards (E-Gharouni) are generated under the SVAMITVA scheme after drone orthorectified aerial mapping. They serve as legal proof of ownership for village household abadi lands and can be used directly for obtaining bank loans.';
-      } else if (lower.includes('dispute') || lower.includes('encroach') || lower.includes('boundary') || lower.includes('grievance')) {
-        reply = 'Boundary disputes can be lodged under the Citizen Portal "Grievances" section. A unique token is issued and a joint field inspection is scheduled by the Revenue Inspector within 14 statutory working days.';
-      } else if (lower.includes('compensation') || lower.includes('payout') || lower.includes('highway') || lower.includes('rfctlarr')) {
-        reply = 'Under the RFCTLARR Act 2013, acquired agricultural and residential land receives the Circle Rate/Market Value multiplied by a rural factor (1.5x - 2.0x), plus a mandatory 100% Solatium and 12% statutory annual interest.';
-      } else if (lower.includes('offline') || lower.includes('sync') || lower.includes('internet')) {
-        reply = 'TerraGIS supports full offline operability. Field inspections made without internet are buffered securely in browser IndexedDB storage and synced automatically once connectivity is restored.';
-      }
-
-      setChatMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
-    }, 450);
+    try {
+      const res = await submitSupportTicket(ticketForm);
+      setTicketStatus({
+        submitting: false,
+        successTicket: res.ticket,
+      });
+      setTicketForm({
+        name: '',
+        email: '',
+        phone: '',
+        category: 'E-Gharouni Property Card',
+        subject: '',
+        message: '',
+      });
+    } catch (err: any) {
+      setTicketStatus({
+        submitting: false,
+        errorMessage: err.message || 'Failed to submit ticket. Please check connection.',
+      });
+    }
   };
 
   const FAQS = [
     {
-      q: 'How do I download my certified E-Gharouni Property Card?',
-      a: 'Switch to the Citizen Portal using the top ribbon toggle, find your parcel by Khasra number or registered owner name, and click "View Official Property Card". You can print or download the verified PDF certificate containing your digital QR signature.',
+      q: 'How do I download my certified E-Gharouni (Property Card)?',
+      a: 'Go to the Citizen Portal or use the search bar on the home page. Search by your Khasra/Plot number (e.g. MH-PUN-HAV-2024-142B) or owner name. Click "View Official Property Card" to view, print, or download the certified document with official QR stamp.',
     },
     {
-      q: 'What is the accuracy of drone boundary mapping?',
-      a: 'Survey of India CORS (Continuously Operating Reference Stations) provide RTK geodetic correction achieving ±5 cm sub-decimeter topological accuracy.',
+      q: 'How do I lodge a boundary dispute or encroachment issue?',
+      a: 'In the Citizen Portal, click on the "Grievances & Disputes" tab. Select your parcel, specify the nature of the dispute (such as bund encroachment or road boundary), and submit. A Revenue Inspector will be assigned within 3 working days.',
     },
     {
-      q: 'How does the Offline Sync queue handle data conflicts?',
-      a: 'TerraGIS employs a server-authoritative timestamping engine with optimistic client-side buffering. Mutations made offline are cryptographically signed and resolved chronologically.',
+      q: 'Can I view village land maps on my phone?',
+      a: 'Yes! The Interactive Cadastral Map (भू-नक्शा) is fully mobile-responsive. You can zoom in to see individual plot boundary lines, survey markers, village roads, and canal paths.',
     },
     {
-      q: 'How can I trigger the live cadastral geofence simulation?',
-      a: 'Click the "Geofence Telemetry" button in the top navigation bar. You can view real-time surveyor coordinates and test boundary breach audio-visual alerts.',
+      q: 'What is Khasra / Satbara 7/12?',
+      a: 'Satbara (7/12) is the official record of rights in Maharashtra containing land ownership, survey number, area, type of cultivation, and any encumbrances. Khasra is the unique survey parcel number assigned to each piece of land.',
+    },
+    {
+      q: 'Where can I visit in person for revenue help in Haveli, Pune?',
+      a: 'You can visit the Tehsil Office, Haveli Division, Near Mahatma Phule Mandai, Pune, Maharashtra 411002 (Monday to Friday, 10:00 AM – 5:00 PM).',
     },
   ];
 
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
-  return (
-    <>
-      {/* Floating Trigger Button */}
-      <div className="fixed bottom-6 left-6 z-40">
+  // If client removed widget, show subtle floating pill or allow keyboard recall
+  if (isRemoved) {
+    return (
+      <div className="fixed bottom-3 right-4 z-30">
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 text-white shadow-2xl border border-slate-700/50 transition-all active:scale-95 group focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-          title="Open Land Help & Support Desk"
+          onClick={handleRestoreWidget}
+          id="btn-restore-support-widget"
+          className="px-2.5 py-1 rounded-full bg-slate-900/90 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/60 shadow-md backdrop-blur-xs transition flex items-center gap-1.5 cursor-pointer"
+          title="Restore Help & Support widget (or press Alt+H)"
         >
-          <div className="relative">
-            <HelpCircle className="w-5 h-5 text-emerald-400 dark:text-white" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          </div>
-          <span className="text-xs font-bold hidden sm:inline">Help & Support</span>
+          <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Need Help? (Alt+H)</span>
         </button>
       </div>
+    );
+  }
 
-      {/* Floating Help Drawer / Card */}
-      {isOpen && (
-        <div className="fixed bottom-20 left-6 z-50 w-[340px] sm:w-[380px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[520px] animate-in slide-in-from-bottom-5 duration-200">
-          {/* Header */}
-          <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-bold">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs">TerraGIS Help Desk</h3>
-                <p className="text-[10px] text-slate-300">Official Cadastre & Jury Support</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 text-slate-400 hover:text-white rounded transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
+  return (
+    <>
+      {/* Floating Draggable Trigger Button */}
+      <motion.div
+        key={dragKey}
+        drag
+        dragMomentum={false}
+        whileDrag={{ scale: 1.05 }}
+        className="fixed bottom-6 left-6 z-40 flex items-center"
+      >
+        <div className="relative flex items-center bg-slate-900 dark:bg-emerald-800 text-white rounded-full shadow-2xl border border-slate-700/60 dark:border-emerald-600/50 p-1 group">
+          {/* Drag Handle Grip */}
+          <div
+            className="cursor-grab active:cursor-grabbing px-1.5 text-slate-400 hover:text-white flex items-center"
+            title="Click and drag anywhere on screen"
+          >
+            <GripVertical className="w-4 h-4" />
           </div>
 
-          {/* Tabs */}
-          <div className="flex items-center border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs">
-            <button
-              onClick={() => setActiveTab('faq')}
-              className={`flex-1 py-2 font-bold text-center border-b-2 transition ${
-                activeTab === 'faq'
-                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              FAQs
-            </button>
-            <button
-              onClick={() => setActiveTab('assistant')}
-              className={`flex-1 py-2 font-bold text-center border-b-2 transition flex items-center justify-center gap-1 ${
-                activeTab === 'assistant'
-                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              AI Assistant
-            </button>
-            <button
-              onClick={() => setActiveTab('contacts')}
-              className={`flex-1 py-2 font-bold text-center border-b-2 transition ${
-                activeTab === 'contacts'
-                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              Contacts
-            </button>
-          </div>
+          {/* Main Button to Open */}
+          <button
+            id="btn-open-helpdesk-float"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold transition hover:text-emerald-300 focus:outline-hidden cursor-pointer"
+            title="Open Citizen Helpdesk & Contact Center"
+          >
+            <HelpCircle className="w-4 h-4 text-emerald-400" />
+            <span className="font-medium">Need Help? / सहायता केंद्र</span>
+          </button>
 
-          {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-3 text-xs">
-            {activeTab === 'faq' && (
-              <div className="space-y-2">
-                {FAQS.map((item, idx) => {
-                  const isExpanded = expandedFaq === idx;
-                  return (
-                    <div
-                      key={idx}
-                      className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden"
-                    >
-                      <button
-                        onClick={() => setExpandedFaq(isExpanded ? null : idx)}
-                        className="w-full px-3 py-2.5 text-left font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
-                      >
-                        <span className="pr-2">{item.q}</span>
-                        <ChevronDown
-                          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
-                            isExpanded ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
-                      {isExpanded && (
-                        <div className="px-3 pb-2.5 pt-1 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
-                          {item.a}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+          {/* Dedicated Remove / Dismiss Button */}
+          <button
+            onClick={handleRemoveWidget}
+            className="p-1 text-slate-400 hover:text-rose-400 rounded-full hover:bg-white/10 transition ml-1 cursor-pointer"
+            title="Hide Helpdesk (Press Alt+H anytime to restore)"
+            aria-label="Remove Helpdesk"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </motion.div>
 
-            {activeTab === 'assistant' && (
-              <div className="flex flex-col h-[300px]">
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-2">
-                  {chatMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed ${
-                          msg.role === 'user'
-                            ? 'bg-emerald-600 text-white rounded-br-2xs'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-2xs border border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        {msg.text}
-                      </div>
-                    </div>
-                  ))}
+      {/* Main Support Dialog Window */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ duration: 0.18 }}
+            className="fixed bottom-20 left-6 z-50 w-[94vw] sm:w-[380px] md:w-[420px] max-h-[82vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans"
+          >
+            {/* Header with Title & Action Controls */}
+            <div className="bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-950 text-white p-3.5 border-b border-emerald-900/40 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center font-bold">
+                  <Building2 className="w-4 h-4" />
                 </div>
-                <form onSubmit={handleSendChat} className="flex gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask about Khasra, survey, property card..."
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] text-slate-900 dark:text-slate-100 outline-hidden"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {activeTab === 'contacts' && (
-              <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      Toll-Free Helpline
-                    </span>
-                    <button
-                      onClick={() => copyToClipboard('1800-180-1551', 'phone')}
-                      className="text-slate-400 hover:text-emerald-600 p-1 transition"
-                      title="Copy helpline"
-                    >
-                      {copiedKey === 'phone' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    </button>
-                  </div>
-                  <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">1800-180-1551</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">08:00 AM - 08:00 PM IST (Mon-Sat)</p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-blue-600" />
-                      Nodal Support Email
-                    </span>
-                    <button
-                      onClick={() => copyToClipboard('support-cadastre@terragis.gov.in', 'email')}
-                      className="text-slate-400 hover:text-emerald-600 p-1 transition"
-                      title="Copy email"
-                    >
-                      {copiedKey === 'email' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    </button>
-                  </div>
-                  <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">support-cadastre@terragis.gov.in</p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5 mb-1">
-                    <MapPin className="w-3.5 h-3.5 text-purple-600" />
-                    Physical Headquarters
-                  </span>
-                  <p className="text-[10px] text-slate-600 dark:text-slate-300 leading-tight">
-                    Ministry of Rural Development & Panchayati Raj, Krishi Bhawan, Rafi Marg, New Delhi 110001
+                <div>
+                  <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
+                    Citizen Help & Grievance Desk
+                  </h3>
+                  <p className="text-[11px] text-emerald-300">
+                    Toll-Free Helpline: 1800-180-1551 (24x7)
                   </p>
                 </div>
+              </div>
 
+              <div className="flex items-center gap-1">
+                {/* Reset position button */}
                 <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    onOpenLegal('contact');
-                  }}
-                  className="w-full py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs text-center transition"
+                  onClick={() => setDragKey((k) => k + 1)}
+                  className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition cursor-pointer"
+                  title="Reset widget position to bottom-left"
                 >
-                  View Full Ministry Directory
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Close dialog */}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition cursor-pointer"
+                  title="Close helpdesk window"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs">
+              <button
+                onClick={() => setActiveTab('contacts')}
+                className={`flex-1 py-2 font-semibold text-center border-b-2 transition cursor-pointer ${
+                  activeTab === 'contacts'
+                    ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900 font-bold'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                Helplines & Offices
+              </button>
+              <button
+                onClick={() => setActiveTab('faq')}
+                className={`flex-1 py-2 font-semibold text-center border-b-2 transition cursor-pointer ${
+                  activeTab === 'faq'
+                    ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900 font-bold'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                FAQs
+              </button>
+              <button
+                onClick={() => setActiveTab('ticket')}
+                className={`flex-1 py-2 font-semibold text-center border-b-2 transition flex items-center justify-center gap-1 cursor-pointer ${
+                  activeTab === 'ticket'
+                    ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900 font-bold'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                <TicketCheck className="w-3.5 h-3.5 text-emerald-600" />
+                Log Grievance
+              </button>
+            </div>
+
+            {/* Tab Content Panels */}
+            <div className="flex-1 overflow-y-auto p-4 text-xs">
+              {/* TAB 1: HELPLINES & CONTACTS */}
+              {activeTab === 'contacts' && (
+                <div className="space-y-3.5">
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                    <p className="font-bold text-slate-900 dark:text-slate-100 text-xs mb-1">
+                      National Kisan & Land Records Helpline
+                    </p>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
+                      Toll-free helpline for land title verification, Svamitva scheme, and digital records assistance.
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-mono font-bold text-sm text-emerald-700 dark:text-emerald-300">
+                        <Phone className="w-4 h-4" />
+                        <span>1800-180-1551</span>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard('1800-180-1551', 'tollfree')}
+                        className="px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === 'tollfree' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        {copiedKey === 'tollfree' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Building2 className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Tehsil Office, Haveli Division</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Near Mahatma Phule Mandai, Pune, Maharashtra 411002
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                          Phone: 020-24440123 • Email: tehsil.haveli@maharashtra.gov.in
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <p className="font-bold text-slate-900 dark:text-white">Survey of India (SOI) Pune Office</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Geodetic & Research Branch, Phadke Sankul, Pune 411005
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Hours: 09:30 AM – 05:30 PM (Mon – Fri)
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: FAQS */}
+              {activeTab === 'faq' && (
+                <div className="space-y-2">
+                  {FAQS.map((item, idx) => {
+                    const isExpanded = expandedFaq === idx;
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => setExpandedFaq(isExpanded ? null : idx)}
+                          className="w-full px-3 py-2.5 text-left font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+                        >
+                          <span className="pr-2">{item.q}</span>
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                        {isExpanded && (
+                          <div className="px-3 pb-2.5 pt-1 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+                            {item.a}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAB 3: LOG TICKET */}
+              {activeTab === 'ticket' && (
+                <div>
+                  {ticketStatus.successTicket ? (
+                    <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-center space-y-2">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                      <h4 className="font-bold text-sm text-emerald-950 dark:text-emerald-100">
+                        Request Registered Successfully
+                      </h4>
+                      <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
+                        Your reference token is{' '}
+                        <span className="font-mono font-bold text-xs bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
+                          {ticketStatus.successTicket.ticketId}
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        An SMS confirmation has been queued for {ticketStatus.successTicket.phone}. A Revenue Inspector will review within 3 working days.
+                      </p>
+                      <button
+                        onClick={() =>
+                          setTicketStatus({ submitting: false, successTicket: undefined })
+                        }
+                        className="mt-2 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-500 cursor-pointer"
+                      >
+                        Submit Another Request
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitTicket} className="space-y-3">
+                      {ticketStatus.errorMessage && (
+                        <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-[11px] flex items-start gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{ticketStatus.errorMessage}</span>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          Full Name (पूरा नाम) *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={ticketForm.name}
+                          onChange={(e) => setTicketForm({ ...ticketForm, name: e.target.value })}
+                          placeholder="e.g. Rameshwar Shinde"
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500 outline-hidden"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Phone / Mobile *
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            value={ticketForm.phone}
+                            onChange={(e) => setTicketForm({ ...ticketForm, phone: e.target.value })}
+                            placeholder="e.g. 9876543210"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500 outline-hidden"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Service Category
+                          </label>
+                          <select
+                            value={ticketForm.category}
+                            onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value })}
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500 outline-hidden cursor-pointer"
+                          >
+                            <option value="E-Gharouni Property Card">Property Card (ई-घरौनी)</option>
+                            <option value="Boundary Dispute">Boundary Dispute (सीमा विवाद)</option>
+                            <option value="Mutation Record">Mutation (दाखिल-खारिज)</option>
+                            <option value="Map Correction">Map Correction (नक्शा दुरुस्ती)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          Describe your issue or plot details *
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          value={ticketForm.message}
+                          onChange={(e) => setTicketForm({ ...ticketForm, message: e.target.value })}
+                          placeholder="Include your Village name, Khasra number, or specific question..."
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500 outline-hidden"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={ticketStatus.submitting}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-xs transition flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{ticketStatus.submitting ? 'Submitting...' : 'Submit Grievance Ticket'}</span>
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Quiet Footer */}
+            <div className="p-2.5 bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500">
+              <span>National Cadastre Portal</span>
+              <button
+                onClick={() => onOpenLegal('contact')}
+                className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium cursor-pointer"
+              >
+                Revenue Directory &rarr;
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

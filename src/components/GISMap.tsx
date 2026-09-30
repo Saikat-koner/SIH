@@ -114,6 +114,7 @@ export const GISMap: React.FC<GISMapProps> = ({
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState<boolean>(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState<boolean>(false);
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState<boolean>(false);
+  const [mapAnnouncement, setMapAnnouncement] = useState<string>('');
 
   // Status color mappings
   const getStatusColor = (status: ParcelStatus) => {
@@ -139,6 +140,22 @@ export const GISMap: React.FC<GISMapProps> = ({
     if (zoningFilter !== 'all' && p.zoning !== zoningFilter) return false;
     return true;
   });
+
+  // Keyboard Escape Handler to close floating menus
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isLayerMenuOpen || isFilterMenuOpen || isProjectMenuOpen) {
+          setIsLayerMenuOpen(false);
+          setIsFilterMenuOpen(false);
+          setIsProjectMenuOpen(false);
+          setMapAnnouncement('Closed map overlay menu');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLayerMenuOpen, isFilterMenuOpen, isProjectMenuOpen]);
 
   // Initialize Map (Bounded, non-continuous world-wrap)
   useEffect(() => {
@@ -205,6 +222,27 @@ export const GISMap: React.FC<GISMapProps> = ({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+    };
+  }, []);
+
+  // Ensure map tiles properly invalidate and redraw when animated in via Framer Motion
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    resizeObserver.observe(mapContainerRef.current);
+    // Also trigger on slight delay to account for animation duration
+    const timer = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 320);
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timer);
     };
   }, []);
 
@@ -922,12 +960,32 @@ export const GISMap: React.FC<GISMapProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-175px)] min-h-[520px] bg-slate-950 overflow-hidden flex flex-col">
+    <div className="relative w-full h-[calc(100vh-175px)] min-h-[520px] bg-slate-950 overflow-hidden flex flex-col" role="region" aria-label="Interactive GIS Cadastral Map View">
+      {/* Screen reader live updates announcement */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
+        {mapAnnouncement}
+      </div>
+
       {/* Map Leaflet Canvas */}
-      <div id="leaflet-map-canvas" ref={mapContainerRef} className="w-full h-full z-0" />
+      <div
+        id="leaflet-map-canvas"
+        ref={mapContainerRef}
+        className="w-full h-full z-0 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:ring-inset"
+        tabIndex={0}
+        role="application"
+        aria-label="Interactive Cadastral GIS Map displaying agricultural, commercial, industrial parcels, and national infrastructure corridors"
+        aria-describedby="map-keyboard-instructions"
+      />
+      <div id="map-keyboard-instructions" className="sr-only">
+        Interactive map canvas. Keyboard users can use the map controls in the toolbar to change base imagery, select national corridors, filter parcels by status or zoning, toggle parcel centroid labels, toggle survey markers, and zoom or fit the view.
+      </div>
 
       {/* Top Floating Control Bar */}
-      <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none flex flex-wrap items-center justify-between gap-3">
+      <div
+        className="absolute top-4 left-4 right-4 z-10 pointer-events-none flex flex-wrap items-center justify-between gap-3"
+        role="toolbar"
+        aria-label="Map Tools, Corridors and Spatial Layers"
+      >
         {/* Left Side: Filter Chips, National Projects & Imagery Toggles */}
         <div className="pointer-events-auto flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-xl shadow-xl border border-slate-200">
           {/* Base Layer Imagery Selector */}
@@ -939,24 +997,37 @@ export const GISMap: React.FC<GISMapProps> = ({
                 setIsFilterMenuOpen(false);
                 setIsProjectMenuOpen(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 transition"
+              aria-haspopup="menu"
+              aria-expanded={isLayerMenuOpen}
+              aria-controls="map-layers-menu"
+              aria-label={`Base Map Imagery: currently ${MAP_LAYERS.find((l) => l.id === activeLayerId)?.name}. Click to change layer.`}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 transition focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
               title="Change Map Tile Imagery"
             >
-              <Layers className="w-4 h-4 text-emerald-600" />
+              <Layers className="w-4 h-4 text-emerald-600" aria-hidden="true" />
               <span>{MAP_LAYERS.find((l) => l.id === activeLayerId)?.name.split(' ')[0]}</span>
             </button>
 
             {isLayerMenuOpen && (
-              <div className="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30">
+              <div
+                id="map-layers-menu"
+                role="menu"
+                aria-label="Base Map Layers"
+                className="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30"
+              >
                 <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   Base Map Layers
                 </div>
                 {MAP_LAYERS.map((layer) => (
                   <button
                     key={layer.id}
+                    role="menuitemradio"
+                    aria-checked={activeLayerId === layer.id}
+                    aria-label={`Select ${layer.name} base layer`}
                     onClick={() => {
                       setActiveLayerId(layer.id);
                       setIsLayerMenuOpen(false);
+                      setMapAnnouncement(`Map base layer changed to ${layer.name}`);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-slate-50 transition ${
                       activeLayerId === layer.id
@@ -966,7 +1037,7 @@ export const GISMap: React.FC<GISMapProps> = ({
                   >
                     <span>{layer.name}</span>
                     {activeLayerId === layer.id && (
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
                     )}
                   </button>
                 ))}
@@ -983,31 +1054,49 @@ export const GISMap: React.FC<GISMapProps> = ({
                 setIsLayerMenuOpen(false);
                 setIsFilterMenuOpen(false);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+              aria-haspopup="menu"
+              aria-expanded={isProjectMenuOpen}
+              aria-controls="national-projects-menu"
+              aria-label={`National Infrastructure Projects and Corridors: currently ${
+                selectedProject
+                  ? selectedProject.shortName
+                  : `All National Projects (${NATIONAL_PROJECT_CORRIDORS.length})`
+              }. Click to open menu.`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
                 showProjects
                   ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200'
                   : 'bg-slate-100 text-slate-500'
               }`}
               title="National Infrastructure Projects & Corridors"
             >
-              <Route className="w-3.5 h-3.5 text-indigo-600" />
+              <Route className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
               <span>
                 {selectedProject
                   ? selectedProject.shortName
                   : `National Projects (${NATIONAL_PROJECT_CORRIDORS.length})`}
               </span>
-              <ChevronDown className="w-3 h-3 text-indigo-500" />
+              <ChevronDown className="w-3 h-3 text-indigo-500" aria-hidden="true" />
             </button>
 
             {isProjectMenuOpen && (
-              <div className="absolute left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-30 max-h-[420px] overflow-y-auto">
+              <div
+                id="national-projects-menu"
+                role="menu"
+                aria-label="National Infrastructure Corridors"
+                className="absolute left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-30 max-h-[420px] overflow-y-auto"
+              >
                 <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 mb-1">
                   <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
                     <span className="text-xs font-bold text-slate-900">National Corridors GIS</span>
                   </div>
                   <button
-                    onClick={() => setShowProjects(!showProjects)}
+                    onClick={() => {
+                      const next = !showProjects;
+                      setShowProjects(next);
+                      setMapAnnouncement(next ? 'National corridors shown' : 'National corridors hidden');
+                    }}
+                    aria-label={showProjects ? 'Hide national corridors overlay' : 'Show national corridors overlay'}
                     className="text-[10px] font-bold text-indigo-600 hover:underline"
                   >
                     {showProjects ? 'Hide Corridors' : 'Show Corridors'}
@@ -1015,7 +1104,12 @@ export const GISMap: React.FC<GISMapProps> = ({
                 </div>
 
                 <button
-                  onClick={() => handleSelectProjectCorridor(null)}
+                  role="menuitem"
+                  aria-label="View all 8 national projects across India"
+                  onClick={() => {
+                    handleSelectProjectCorridor(null);
+                    setMapAnnouncement('Displaying all 8 national projects across India');
+                  }}
                   className={`w-full flex items-center justify-between px-2.5 py-2 text-xs text-left rounded-lg transition ${
                     activeCorridorFilter === 'all' && !selectedProject
                       ? 'bg-indigo-50 font-bold text-indigo-900'
@@ -1031,11 +1125,16 @@ export const GISMap: React.FC<GISMapProps> = ({
                   </span>
                 </button>
 
-                <div className="mt-1 space-y-1">
+                <div className="mt-1 space-y-1" role="group" aria-label="Individual Project Corridors">
                   {NATIONAL_PROJECT_CORRIDORS.map((corridor) => (
                     <button
                       key={corridor.id}
-                      onClick={() => handleSelectProjectCorridor(corridor)}
+                      role="menuitem"
+                      aria-label={`Select corridor: ${corridor.name}, budget ${corridor.allocatedBudgetCr} crore`}
+                      onClick={() => {
+                        handleSelectProjectCorridor(corridor);
+                        setMapAnnouncement(`Selected corridor ${corridor.name}`);
+                      }}
                       className={`w-full flex items-center gap-2.5 px-2.5 py-2 text-xs text-left rounded-lg transition ${
                         selectedProject?.id === corridor.id
                           ? 'bg-indigo-100/70 border border-indigo-300 font-bold text-indigo-950'
@@ -1045,6 +1144,7 @@ export const GISMap: React.FC<GISMapProps> = ({
                       <span
                         className="w-3 h-3 rounded-full shrink-0 shadow-xs"
                         style={{ backgroundColor: corridor.color }}
+                        aria-hidden="true"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="font-bold text-slate-900 truncate">{corridor.name}</div>
@@ -1071,11 +1171,15 @@ export const GISMap: React.FC<GISMapProps> = ({
               setIsLayerMenuOpen(false);
               setIsProjectMenuOpen(false);
               setIsFilterMenuOpen(false);
+              setMapAnnouncement('Opened Live Government Spatial Feeds panel');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-xs transition"
+            aria-haspopup="dialog"
+            aria-expanded={isFeedsPanelOpen}
+            aria-label={`Open Live Government Spatial Feeds panel. ${activeFeedIds.length} feeds active from ISRO Bhuvan and data.gov.in.`}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-xs transition focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             title="Real-time Spatial Datasets from ISRO Bhuvan & data.gov.in"
           >
-            <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+            <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" aria-hidden="true" />
             <span className="hidden sm:inline">Govt Feeds</span>
             <span className="sm:hidden">Feeds</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-900">
@@ -1086,8 +1190,18 @@ export const GISMap: React.FC<GISMapProps> = ({
           {/* Cadastral Geofencing Monitor HUD Button */}
           <button
             id="btn-map-geofence"
-            onClick={() => setIsMonitorModalOpen(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border shadow-xs transition ${
+            onClick={() => {
+              setIsMonitorModalOpen(true);
+              setMapAnnouncement('Opened Cadastral Geofence Telemetry Monitor HUD');
+            }}
+            aria-label={`Open Cadastral Geofence Monitor HUD. Current status: ${
+              !isGeofenceActive
+                ? 'Geofence paused'
+                : boundaryStatus === 'inside'
+                ? `Inside assigned parcel ${assignedParcel?.parcelNumber || ''}`
+                : `${distanceToBoundary} meters outside boundary`
+            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border shadow-xs transition focus:outline-hidden focus:ring-2 focus:ring-emerald-500 ${
               !isGeofenceActive
                 ? 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'
                 : boundaryStatus === 'inside'
@@ -1103,6 +1217,7 @@ export const GISMap: React.FC<GISMapProps> = ({
             }`}
           >
             <Radio
+              aria-hidden="true"
               className={`w-3.5 h-3.5 ${
                 isGeofenceActive
                   ? boundaryStatus === 'inside'
@@ -1139,14 +1254,23 @@ export const GISMap: React.FC<GISMapProps> = ({
                 setIsLayerMenuOpen(false);
                 setIsProjectMenuOpen(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 transition"
+              aria-haspopup="dialog"
+              aria-expanded={isFilterMenuOpen}
+              aria-controls="map-spatial-filters-menu"
+              aria-label={`Spatial Filters: ${statusFilter !== 'all' || zoningFilter !== 'all' ? 'Active filters applied' : 'No filters applied'}. Click to configure.`}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 transition focus:outline-hidden focus:ring-2 focus:ring-slate-400"
             >
-              <Filter className="w-3.5 h-3.5 text-slate-600" />
+              <Filter className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
               <span>Filters {statusFilter !== 'all' || zoningFilter !== 'all' ? '•' : ''}</span>
             </button>
 
             {isFilterMenuOpen && (
-              <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-30">
+              <div
+                id="map-spatial-filters-menu"
+                role="dialog"
+                aria-label="Spatial Filters Settings"
+                className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-30"
+              >
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                   <span className="text-xs font-bold text-slate-800">Spatial Filters</span>
                   {(statusFilter !== 'all' || zoningFilter !== 'all') && (
@@ -1154,7 +1278,9 @@ export const GISMap: React.FC<GISMapProps> = ({
                       onClick={() => {
                         setStatusFilter('all');
                         setZoningFilter('all');
+                        setMapAnnouncement('Reset all spatial filters to show all parcels');
                       }}
+                      aria-label="Reset all spatial filters to default"
                       className="text-[11px] text-rose-600 hover:underline font-medium"
                     >
                       Reset
@@ -1164,13 +1290,18 @@ export const GISMap: React.FC<GISMapProps> = ({
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    <label htmlFor="map-cadastre-status-filter" className="block text-[11px] font-semibold text-slate-500 mb-1">
                       Cadastre Status
                     </label>
                     <select
+                      id="map-cadastre-status-filter"
+                      aria-label="Filter parcels by cadastre status"
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800"
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setMapAnnouncement(`Filtered parcels by status: ${e.target.value}`);
+                      }}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                     >
                       <option value="all">All Statuses ({parcels.length})</option>
                       <option value="active">Active Parcels</option>
@@ -1182,13 +1313,18 @@ export const GISMap: React.FC<GISMapProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    <label htmlFor="map-zoning-category-filter" className="block text-[11px] font-semibold text-slate-500 mb-1">
                       Zoning Category
                     </label>
                     <select
+                      id="map-zoning-category-filter"
+                      aria-label="Filter parcels by zoning category"
                       value={zoningFilter}
-                      onChange={(e) => setZoningFilter(e.target.value)}
-                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800"
+                      onChange={(e) => {
+                        setZoningFilter(e.target.value);
+                        setMapAnnouncement(`Filtered parcels by zoning: ${e.target.value}`);
+                      }}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                     >
                       <option value="all">All Zoning Categories</option>
                       <option value="Agricultural">Agricultural</option>
@@ -1206,8 +1342,14 @@ export const GISMap: React.FC<GISMapProps> = ({
 
           {/* Toggle Labels */}
           <button
-            onClick={() => setShowLabels(!showLabels)}
-            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition ${
+            onClick={() => {
+              const next = !showLabels;
+              setShowLabels(next);
+              setMapAnnouncement(next ? 'Parcel centroid labels enabled' : 'Parcel centroid labels hidden');
+            }}
+            aria-pressed={showLabels}
+            aria-label={`Toggle parcel centroid labels on map. Currently ${showLabels ? 'enabled' : 'disabled'}`}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition focus:outline-hidden focus:ring-2 focus:ring-slate-600 ${
               showLabels ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
             title="Toggle polygon centroid labels"
@@ -1217,40 +1359,62 @@ export const GISMap: React.FC<GISMapProps> = ({
 
           {/* Toggle Waypoint Markers */}
           <button
-            onClick={() => setShowMarkers(!showMarkers)}
-            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition flex items-center gap-1 ${
+            onClick={() => {
+              const next = !showMarkers;
+              setShowMarkers(next);
+              setMapAnnouncement(next ? 'Survey waypoint markers enabled' : 'Survey waypoint markers hidden');
+            }}
+            aria-pressed={showMarkers}
+            aria-label={`Toggle field survey waypoints and CORS markers on map. Currently ${showMarkers ? 'enabled' : 'disabled'}`}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition flex items-center gap-1 focus:outline-hidden focus:ring-2 focus:ring-amber-500 ${
               showMarkers ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
             title="Toggle field survey waypoints & CORS markers"
           >
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
             <span className="hidden sm:inline">Markers</span>
           </button>
         </div>
 
         {/* Right Side: Map Navigation Tools */}
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-white p-1.5 rounded-xl shadow-xl border border-slate-200">
+        <div
+          className="pointer-events-auto flex items-center gap-1.5 bg-white p-1.5 rounded-xl shadow-xl border border-slate-200"
+          role="group"
+          aria-label="Map Zoom and View Controls"
+        >
           <button
-            onClick={() => mapInstanceRef.current?.zoomIn()}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition"
+            onClick={() => {
+              mapInstanceRef.current?.zoomIn();
+              setMapAnnouncement('Zoomed in map');
+            }}
+            aria-label="Zoom in map"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             title="Zoom In"
           >
-            <ZoomIn className="w-4 h-4" />
+            <ZoomIn className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
-            onClick={() => mapInstanceRef.current?.zoomOut()}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition"
+            onClick={() => {
+              mapInstanceRef.current?.zoomOut();
+              setMapAnnouncement('Zoomed out map');
+            }}
+            aria-label="Zoom out map"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             title="Zoom Out"
           >
-            <ZoomOut className="w-4 h-4" />
+            <ZoomOut className="w-4 h-4" aria-hidden="true" />
           </button>
-          <div className="w-px h-4 bg-slate-200" />
+          <div className="w-px h-4 bg-slate-200" aria-hidden="true" />
           <button
-            onClick={handleZoomToFit}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-slate-100 text-slate-700 transition"
+            onClick={() => {
+              handleZoomToFit();
+              setMapAnnouncement('Adjusted map view to fit all land parcels and national corridors');
+            }}
+            aria-label="Fit map view to all land parcels and national corridors"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-slate-100 text-slate-700 transition focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             title="Fit view to all land parcels and corridors"
           >
-            <Compass className="w-4 h-4 text-emerald-600" />
+            <Compass className="w-4 h-4 text-emerald-600" aria-hidden="true" />
             <span className="hidden sm:inline">Fit All</span>
           </button>
         </div>
@@ -1258,12 +1422,17 @@ export const GISMap: React.FC<GISMapProps> = ({
 
       {/* Floating Project Dossier Inspector (Active when a project is selected) */}
       {selectedProject && (
-        <div className="absolute bottom-16 left-4 z-20 pointer-events-auto max-w-md w-[calc(100%-2rem)] sm:w-96 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div
+          role="dialog"
+          aria-label={`Project Dossier for ${selectedProject.name}`}
+          className="absolute bottom-16 left-4 z-20 pointer-events-auto max-w-md w-[calc(100%-2rem)] sm:w-96 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 animate-in fade-in slide-in-from-bottom-3 duration-200"
+        >
           <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <span
-                className="w-3.5 h-3.5 rounded-full shadow-sm shrink-0"
+                className="w-3.5 h-3.5 rounded-full shadow-xs shrink-0"
                 style={{ backgroundColor: selectedProject.color }}
+                aria-hidden="true"
               />
               <div>
                 <h4 className="text-xs font-bold text-slate-900 leading-tight">
@@ -1275,11 +1444,15 @@ export const GISMap: React.FC<GISMapProps> = ({
               </div>
             </div>
             <button
-              onClick={() => setSelectedProject(null)}
-              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              onClick={() => {
+                setSelectedProject(null);
+                setMapAnnouncement('Closed project dossier');
+              }}
+              aria-label={`Close project dossier for ${selectedProject.name}`}
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition focus:outline-hidden focus:ring-2 focus:ring-slate-400"
               title="Close project dossier"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
@@ -1288,7 +1461,7 @@ export const GISMap: React.FC<GISMapProps> = ({
           </p>
 
           {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+          <div className="grid grid-cols-2 gap-2 mt-3 text-xs" role="region" aria-label="Project Key Metrics">
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
               <div className="text-[10px] text-slate-500 font-medium">Total Corridor Length</div>
               <div className="text-sm font-bold text-slate-900">
@@ -1320,21 +1493,27 @@ export const GISMap: React.FC<GISMapProps> = ({
 
           {/* Waypoint Chips */}
           <div className="mt-3">
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" id="corridor-stations-label">
               Key Stations & Interchanges:
             </div>
-            <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+            <div
+              className="flex flex-wrap gap-1 max-h-20 overflow-y-auto"
+              role="group"
+              aria-labelledby="corridor-stations-label"
+            >
               {selectedProject.waypoints.map((wp, idx) => (
                 <button
                   key={idx}
                   onClick={() => {
                     if (mapInstanceRef.current) {
                       mapInstanceRef.current.flyTo(wp.position, 12, { animate: true });
+                      setMapAnnouncement(`Map centered on waypoint station: ${wp.name}`);
                     }
                   }}
-                  className="px-2 py-0.5 rounded text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1 font-medium"
+                  aria-label={`Fly map to waypoint station ${wp.name}`}
+                  className="px-2 py-0.5 rounded text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1 font-medium focus:outline-hidden focus:ring-2 focus:ring-indigo-400"
                 >
-                  <MapPin className="w-2.5 h-2.5 text-slate-500" />
+                  <MapPin className="w-2.5 h-2.5 text-slate-500" aria-hidden="true" />
                   <span>{wp.name.split(' (')[0]}</span>
                 </button>
               ))}
@@ -1349,11 +1528,12 @@ export const GISMap: React.FC<GISMapProps> = ({
             {onNavigateToLifecycle && (
               <button
                 onClick={() => onNavigateToLifecycle(selectedProject.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition"
+                aria-label={`Track corridor ${selectedProject.name} in Acquisition Lifecycle Manager`}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition focus:outline-hidden focus:ring-2 focus:ring-emerald-400"
               >
-                <Activity className="w-3.5 h-3.5" />
+                <Activity className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Track in Lifecycle</span>
-                <ExternalLink className="w-3 h-3 ml-0.5" />
+                <ExternalLink className="w-3 h-3 ml-0.5" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -1361,9 +1541,17 @@ export const GISMap: React.FC<GISMapProps> = ({
       )}
 
       {/* Bottom Map Legend and Live Coordinate Readout */}
-      <div className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none flex flex-wrap items-end justify-between gap-3">
+      <div
+        className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none flex flex-wrap items-end justify-between gap-3"
+        role="region"
+        aria-label="Map Overlays Legend and Real-time Telemetry"
+      >
         {/* Cadastre & Project Corridors Legend */}
-        <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-lg border border-slate-200 text-xs flex flex-wrap items-center gap-3">
+        <div
+          className="pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-lg border border-slate-200 text-xs flex flex-wrap items-center gap-3"
+          role="region"
+          aria-label="Symbology Legend"
+        >
           <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">
             Map Overlays:
           </span>
@@ -1372,23 +1560,23 @@ export const GISMap: React.FC<GISMapProps> = ({
           <div className="flex items-center gap-2 border-r border-slate-200 pr-3">
             <span className="text-[10px] font-bold text-indigo-800">Corridors:</span>
             <div className="flex items-center gap-1" title="Delhi-Mumbai Expressway">
-              <span className="w-3 h-1.5 rounded-full bg-orange-500 inline-block" />
+              <span className="w-3 h-1.5 rounded-full bg-orange-500 inline-block" aria-hidden="true" />
               <span className="text-slate-600 text-[10px]">DME</span>
             </div>
             <div className="flex items-center gap-1" title="Western DFC Freight Rail">
-              <span className="w-3 h-1.5 rounded-full bg-blue-600 inline-block" />
+              <span className="w-3 h-1.5 rounded-full bg-blue-600 inline-block" aria-hidden="true" />
               <span className="text-slate-600 text-[10px]">WDFC</span>
             </div>
             <div className="flex items-center gap-1" title="Mumbai-Ahmedabad Bullet Train">
-              <span className="w-3 h-1.5 rounded-full bg-emerald-600 inline-block" />
+              <span className="w-3 h-1.5 rounded-full bg-emerald-600 inline-block" aria-hidden="true" />
               <span className="text-slate-600 text-[10px]">Bullet Train</span>
             </div>
             <div className="flex items-center gap-1" title="Eastern DFC Freight Rail">
-              <span className="w-3 h-1.5 rounded-full bg-sky-500 inline-block" />
+              <span className="w-3 h-1.5 rounded-full bg-sky-500 inline-block" aria-hidden="true" />
               <span className="text-slate-600 text-[10px]">EDFC</span>
             </div>
             <div className="flex items-center gap-1" title="Bengaluru-Chennai Expressway">
-              <span className="w-3 h-1.5 rounded-full bg-purple-500 inline-block" />
+              <span className="w-3 h-1.5 rounded-full bg-purple-500 inline-block" aria-hidden="true" />
               <span className="text-slate-600 text-[10px]">NE-7</span>
             </div>
           </div>
@@ -1397,7 +1585,7 @@ export const GISMap: React.FC<GISMapProps> = ({
           {activeFeedIds.length > 0 && (
             <div className="flex items-center gap-2 border-r border-slate-200 pr-3">
               <span className="text-[10px] font-bold text-emerald-800 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
                 Live Govt Feeds:
               </span>
               <span className="text-slate-600 text-[10px]">
@@ -1410,19 +1598,19 @@ export const GISMap: React.FC<GISMapProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-slate-500">Parcels:</span>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 border border-emerald-700 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 border border-emerald-700 inline-block" aria-hidden="true" />
               <span className="text-slate-700 text-[10px]">Active</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-blue-500 border border-blue-700 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-xs bg-blue-500 border border-blue-700 inline-block" aria-hidden="true" />
               <span className="text-slate-700 text-[10px]">Acquired</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-amber-500 border border-amber-700 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-xs bg-amber-500 border border-amber-700 inline-block" aria-hidden="true" />
               <span className="text-slate-700 text-[10px]">In Review</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 border border-rose-700 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 border border-rose-700 inline-block" aria-hidden="true" />
               <span className="text-slate-700 text-[10px]">Disputed</span>
             </div>
           </div>
@@ -1431,8 +1619,18 @@ export const GISMap: React.FC<GISMapProps> = ({
         {/* Real-Time Geofence Telemetry Mini Chip */}
         <button
           id="btn-map-geofence-mini-chip"
-          onClick={() => setIsMonitorModalOpen(true)}
-          className={`pointer-events-auto px-3 py-1.5 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transition active:scale-95 ${
+          onClick={() => {
+            setIsMonitorModalOpen(true);
+            setMapAnnouncement('Opened Cadastral Geofence Telemetry Monitor HUD');
+          }}
+          aria-label={`Cadastral Geofence Telemetry: ${
+            !isGeofenceActive
+              ? 'Paused'
+              : boundaryStatus === 'inside'
+              ? `Inside assigned parcel ${assignedParcel?.parcelNumber || ''}`
+              : `${distanceToBoundary} meters outside boundary`
+          }. Click to open full telemetry monitor.`}
+          className={`pointer-events-auto px-3 py-1.5 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transition active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-emerald-400 ${
             !isGeofenceActive
               ? 'bg-slate-900/90 text-slate-300 border-slate-700 hover:bg-slate-800/90'
               : boundaryStatus === 'inside'
@@ -1441,7 +1639,7 @@ export const GISMap: React.FC<GISMapProps> = ({
           }`}
           title="Click to open full Cadastral Geofence Telemetry HUD"
         >
-          <span className="relative flex h-2.5 w-2.5">
+          <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
             {isGeofenceActive && (
               <span
                 className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
@@ -1472,8 +1670,17 @@ export const GISMap: React.FC<GISMapProps> = ({
         </button>
 
         {/* Live Coordinate Cursor Readout with proper East/West notation */}
-        <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg border border-slate-700 text-white font-mono text-[11px] flex items-center gap-2">
-          <Navigation className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+        <div
+          role="status"
+          aria-live="off"
+          aria-label={`Current geospatial cursor coordinates: ${
+            cursorCoords
+              ? `${Math.abs(cursorCoords.lat).toFixed(4)} degrees ${cursorCoords.lat >= 0 ? 'North' : 'South'}, ${Math.abs(cursorCoords.lng).toFixed(4)} degrees ${cursorCoords.lng >= 0 ? 'East' : 'West'}`
+              : '21.7679 degrees North, 78.8718 degrees East'
+          }`}
+          className="pointer-events-auto bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg border border-slate-700 text-white font-mono text-[11px] flex items-center gap-2"
+        >
+          <Navigation className="w-3.5 h-3.5 text-emerald-400 animate-pulse" aria-hidden="true" />
           <span>
             {cursorCoords
               ? `${Math.abs(cursorCoords.lat).toFixed(4)}° ${cursorCoords.lat >= 0 ? 'N' : 'S'}, ${Math.abs(cursorCoords.lng).toFixed(4)}° ${cursorCoords.lng >= 0 ? 'E' : 'W'}`

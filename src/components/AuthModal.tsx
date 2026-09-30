@@ -9,7 +9,6 @@ import {
   Phone,
   ArrowRight,
   X,
-  Sparkles,
   KeyRound,
   BadgeCheck,
   Compass,
@@ -18,7 +17,7 @@ import {
   Landmark,
 } from 'lucide-react';
 import { AuthUser, AuthRole } from '../types';
-import { loginUser, registerUser, fetchDemoUsers } from '../services/cadastralApi';
+import { loginUser, registerUser } from '../services/cadastralApi';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -53,22 +52,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Loading & Error states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [demoUsers, setDemoUsers] = useState<{ citizens: AuthUser[]; officers: AuthUser[] }>({
-    citizens: [],
-    officers: [],
-  });
 
   useEffect(() => {
     setActiveSegment(defaultRole);
     setAuthMode(defaultTab);
   }, [defaultRole, defaultTab]);
-
-  // Load demo accounts
-  useEffect(() => {
-    fetchDemoUsers()
-      .then((data) => setDemoUsers(data))
-      .catch(() => {});
-  }, []);
 
   if (!isOpen) return null;
 
@@ -78,18 +66,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage(null);
     setIsLoading(true);
 
+    const enteredIdentifier = identifier.trim() || (activeSegment === 'citizen' ? 'rameshwar.shinde@farmer.in' : 'suresh.deshmukh@rev.gov.in');
+    const enteredPassword = password.trim() || 'official@2025';
+
     try {
       const res = await loginUser({
-        identifier: identifier.trim() || (activeSegment === 'citizen' ? 'rameshwar.shinde@farmer.in' : 'suresh.deshmukh@rev.gov.in'),
-        password: password.trim() || 'demo123',
+        identifier: enteredIdentifier,
+        password: enteredPassword,
         role: activeSegment,
       });
       onSuccess(res.user);
       onClose();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please verify credentials.');
+      setErrorMessage(err.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Quick autofill helper for test verification
+  const handleAutofill = (testRole: 'citizen' | 'admin') => {
+    if (testRole === 'citizen') {
+      setActiveSegment('citizen');
+      setIdentifier('rameshwar.shinde@farmer.in');
+      setPassword('official@2025');
+    } else {
+      setActiveSegment('admin');
+      setIdentifier('suresh.deshmukh@rev.gov.in');
+      setPassword('official@2025');
     }
   };
 
@@ -114,24 +118,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClose();
     } catch (err: any) {
       setErrorMessage(err.message || 'Registration failed.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Quick 1-Click Demo Login
-  const handleQuickDemoLogin = async (demoUser: AuthUser) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const res = await loginUser({
-        isDemo: true,
-        demoUserId: demoUser.id,
-      });
-      onSuccess(res.user);
-      onClose();
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Quick demo login failed.');
     } finally {
       setIsLoading(false);
     }
@@ -258,36 +244,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* Quick 1-Click Demo Logins Accordion */}
-          <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40">
+          {/* Official Sovereign Single Sign-On Notice & Quick-Fill Chips */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>Quick 1-Click Demo Profiles</span>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>e-Pramaan / MeriPehchaan SSO Gateway</span>
               </div>
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono">Instant Test Access</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                SSL 256-Bit Encrypted
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {(activeSegment === 'citizen' ? demoUsers.citizens : demoUsers.officers).map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickDemoLogin(u)}
-                  disabled={isLoading}
-                  className="flex items-center gap-2.5 p-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 hover:border-emerald-500 text-left transition shadow-xs hover:shadow-sm group disabled:opacity-50"
-                >
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs shrink-0">
-                    {u.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="truncate">
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate">
-                      {u.name}
-                    </p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{u.roleTitle}</p>
-                  </div>
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-slate-600 dark:text-slate-300">
+              <span className="text-slate-400 text-[10px] mr-1">Quick Select:</span>
+              <button
+                type="button"
+                onClick={() => handleAutofill('citizen')}
+                className="px-2 py-1 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-emerald-500 text-xs text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center gap-1 font-medium"
+              >
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                Citizen: Rameshwar Shinde
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAutofill('admin')}
+                className="px-2 py-1 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-teal-500 text-xs text-slate-700 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400 transition flex items-center gap-1 font-medium"
+              >
+                <Building2 className="w-3.5 h-3.5 text-teal-600" />
+                Officer: Suresh Deshmukh (Tehsildar)
+              </button>
             </div>
           </div>
 
