@@ -107,7 +107,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   Sovereign Citizen Data Protection Commitment
                 </h4>
                 <p className="text-emerald-800 dark:text-emerald-200 text-xs">
-                  All cadastral coordinates, Aadhaar tokens, Khasra certificates, and landowner names processed on TerraGIS are stored inside sovereign Indian datacenter clusters adhering to the Digital Personal Data Protection (DPDP) Act 2023.
+                  All cadastral coordinates, Aadhaar tokens, Khasra certificates, and landowner names processed on BhuDrishti are stored inside sovereign Indian datacenter clusters adhering to the Digital Personal Data Protection (DPDP) Act 2023.
                 </p>
               </div>
 
@@ -116,7 +116,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   1. Data Collection & Cadastral Records
                 </h3>
                 <p>
-                  TerraGIS acts as a spatial integration platform linking Survey of India drone orthorectified imagery, State Land Revenue Departments (e.g. Bhulekh, UP Revenue Code 2006, Karnataka Bhoomi), and municipal GIS databases. We collect polygon centroid coordinates, survey verification timestamps, dispute tokens, and designated officer e-signatures.
+                  BhuDrishti acts as a spatial integration platform linking Survey of India drone orthorectified imagery, State Land Revenue Departments (e.g. Bhulekh, UP Revenue Code 2006, Karnataka Bhoomi), and municipal GIS databases. We collect polygon centroid coordinates, survey verification timestamps, dispute tokens, and designated officer e-signatures.
                 </p>
               </div>
 
@@ -148,7 +148,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   Statutory Cadastral & Valuation Standards
                 </h4>
                 <p className="text-slate-600 dark:text-slate-300 text-xs">
-                  Cadastral boundaries rendered in TerraGIS conform to WGS 84 (EPSG:4326) and UTM Zone 43N/44N projections with CORS network differential correction.
+                  Cadastral boundaries rendered in BhuDrishti conform to WGS 84 (EPSG:4326) and UTM Zone 43N/44N projections with CORS network differential correction.
                 </p>
               </div>
 
@@ -242,7 +242,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                       <span>Official Nodal Desk</span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-mono">
-                      support-cadastre@terragis.gov.in<br />
+                      support-cadastre@bhudrishti.gov.in<br />
                       nodal-svamitva@panchayat.gov.in<br />
                       NIC Service Desk: 011-2338-7654
                     </p>

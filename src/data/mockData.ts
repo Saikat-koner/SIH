@@ -4,7 +4,7 @@ export const USER_PROFILES: Record<string, UserProfile> = {
   admin: {
     id: 'usr_admin',
     name: 'Elena Rostova, PLS',
-    email: 'elena.rostova@terragis.io',
+    email: 'elena.rostova@bhudrishti.io',
     role: 'admin',
     roleTitle: 'GIS Director & Principal Surveyor',
     organization: 'Regional Land Information Authority',
@@ -13,7 +13,7 @@ export const USER_PROFILES: Record<string, UserProfile> = {
   surveyor: {
     id: 'usr_surveyor',
     name: 'Marcus Vance',
-    email: 'm.vance@terragis.io',
+    email: 'm.vance@bhudrishti.io',
     role: 'surveyor',
     roleTitle: 'Lead Field Geodetic Surveyor',
     organization: 'Apex Field Geomatics Ltd.',

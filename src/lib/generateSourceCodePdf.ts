@@ -32,7 +32,7 @@ export function downloadSourceCodePDF(): void {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(140, 140, 140);
-      doc.text('TerraGIS Cadastre - Full Source Code & Architecture Dossier', margin, 10);
+      doc.text('BhuDrishti Cadastre - Full Source Code & Architecture Dossier', margin, 10);
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, 12, pageWidth - margin, 12);
     }
@@ -46,7 +46,7 @@ export function downloadSourceCodePDF(): void {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text('TerraGIS Sovereign Cadastre Platform', margin, 18);
+  doc.text('BhuDrishti Sovereign Cadastre Platform', margin, 18);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -89,7 +89,7 @@ export function downloadSourceCodePDF(): void {
   doc.setFontSize(9);
   doc.setTextColor(51, 65, 85);
   const overviewText = 
-    "TerraGIS is a production-ready, full-stack Land Administration and Cadastral GIS Platform built to bridge the gap between high-precision government surveying (Survey of India, ISRO Bhuvan, State Land Revenue departments) and citizen empowerment. It incorporates sub-5cm CORS RTK drone cadastral boundaries, statutory RFCTLARR 2013 compensation calculation engines, cryptographically sealed Property Passbooks (e-Gharoni 7/12 & 8A), multi-tier role-based access control (RBAC), and vernacular accessibility across 8 Indian languages.";
+    "BhuDrishti is a production-ready, full-stack Land Administration and Cadastral GIS Platform built to bridge the gap between high-precision government surveying (Survey of India, ISRO Bhuvan, State Land Revenue departments) and citizen empowerment. It incorporates sub-5cm CORS RTK drone cadastral boundaries, statutory RFCTLARR 2013 compensation calculation engines, cryptographically sealed Property Passbooks (e-Gharoni 7/12 & 8A), multi-tier role-based access control (RBAC), and vernacular accessibility across 8 Indian languages.";
   
   const splitOverview = doc.splitTextToSize(overviewText, pageWidth - margin * 2);
   doc.text(splitOverview, margin, cursorY);
@@ -341,12 +341,12 @@ export function downloadSourceCodePDF(): void {
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
     doc.text(
-      `Page ${i} of ${totalPages} | TerraGIS Sovereign Cadastre | Ministry of Panchayati Raj & Survey of India`,
+      `Page ${i} of ${totalPages} | BhuDrishti Sovereign Cadastre | Ministry of Panchayati Raj & Survey of India`,
       margin,
       pageHeight - 8
     );
   }
 
   // Save / Trigger Download
-  doc.save('TerraGIS_Source_Code_Architecture_Dossier.pdf');
+  doc.save('BhuDrishti_Source_Code_Architecture_Dossier.pdf');
 }

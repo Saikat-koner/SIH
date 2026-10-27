@@ -138,7 +138,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   };
 
   return (
-    <div id="bhu-seva-home-page" className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
+    <div id="bhudrishti-home-page" className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
       {/* Official Government Top Bar */}
       <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -168,7 +168,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
-                  भू-सेवा · Bhu-Seva
+                  भू-दृष्टि · BhuDrishti
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 hidden md:inline">
                   | National Land Records & GIS Portal
@@ -598,7 +598,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Landmark className="w-5 h-5 text-emerald-400" />
-            <span className="font-bold text-slate-200">Bhu-Seva National Cadastre Portal</span>
+            <span className="font-bold text-slate-200">BhuDrishti National Cadastre Portal</span>
             <span>·</span>
             <span>SVAMITVA & DILRMP</span>
           </div>

@@ -93,7 +93,7 @@ export const ParcelTable: React.FC<ParcelTableProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `terragis_cadastre_export_${new Date().toISOString().split('T')[0]}.geojson`;
+    a.download = `bhudrishti_cadastre_export_${new Date().toISOString().split('T')[0]}.geojson`;
     a.click();
     URL.revokeObjectURL(url);
   };

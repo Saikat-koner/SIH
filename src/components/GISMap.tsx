@@ -187,7 +187,7 @@ export const GISMap: React.FC<GISMapProps> = ({
       L.control
         .attribution({
           position: 'bottomright',
-          prefix: '<span class="text-[10px] text-slate-500 font-medium">TerraGIS &bull; Cadastre AI</span>',
+          prefix: '<span class="text-[10px] text-slate-500 font-medium">BhuDrishti &bull; Cadastre AI</span>',
         })
         .addTo(map);
 

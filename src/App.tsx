@@ -719,7 +719,7 @@ export default function App() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden"
+                className="relative z-40 overflow-visible"
               >
                 <Navbar
                   currentRole={currentRole}

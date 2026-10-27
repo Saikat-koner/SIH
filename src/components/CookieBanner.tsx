@@ -16,7 +16,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ onOpenLegal }) => {
 
   useEffect(() => {
     try {
-      const consent = localStorage.getItem('terragis_cookie_consent_v1');
+      const consent = localStorage.getItem('bhudrishti_cookie_consent_v1');
       if (!consent) {
         // Show after small delay for organic feel
         const timer = setTimeout(() => setIsVisible(true), 1200);
@@ -29,21 +29,21 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ onOpenLegal }) => {
 
   const handleAcceptAll = () => {
     try {
-      localStorage.setItem('terragis_cookie_consent_v1', JSON.stringify({ essential: true, analytics: true, telemetry: true }));
+      localStorage.setItem('bhudrishti_cookie_consent_v1', JSON.stringify({ essential: true, analytics: true, telemetry: true }));
     } catch {}
     setIsVisible(false);
   };
 
   const handleAcceptEssential = () => {
     try {
-      localStorage.setItem('terragis_cookie_consent_v1', JSON.stringify({ essential: true, analytics: false, telemetry: false }));
+      localStorage.setItem('bhudrishti_cookie_consent_v1', JSON.stringify({ essential: true, analytics: false, telemetry: false }));
     } catch {}
     setIsVisible(false);
   };
 
   const handleSavePreferences = () => {
     try {
-      localStorage.setItem('terragis_cookie_consent_v1', JSON.stringify(preferences));
+      localStorage.setItem('bhudrishti_cookie_consent_v1', JSON.stringify(preferences));
     } catch {}
     setIsVisible(false);
   };
@@ -68,7 +68,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ onOpenLegal }) => {
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                TerraGIS utilizes strict local state caching and GIS telemetry to securely synchronize your cadastral maps, offline inspections, and digital land certificates. We never monetize or transfer sovereign citizen land data to third parties.
+                BhuDrishti utilizes strict local state caching and GIS telemetry to securely synchronize your cadastral maps, offline inspections, and digital land certificates. We never monetize or transfer sovereign citizen land data to third parties.
               </p>
               <div className="flex items-center gap-3 mt-1.5 text-xs">
                 <button

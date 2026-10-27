@@ -185,8 +185,8 @@ export interface Translations {
 
 export const DICTIONARY: Record<string, Partial<Translations>> = {
   en: {
-    appName: 'TerraGIS Cadastre AI',
-    appTitle: 'TerraGIS Cadastre AI',
+    appName: 'BhuDrishti Cadastre',
+    appTitle: 'BhuDrishti Cadastre',
     appSubtitle: 'Spatial Land Records & Cadastral Dispute Resolution (DILRMP / SVAMITVA)',
     mapView: 'GIS Map',
     tabMap: 'GIS Map',
@@ -233,7 +233,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 Verified Submission',
   },
   hi: {
-    appTitle: 'भू-दृष्टि कैडेस्ट्रल एआई (TerraGIS)',
+    appTitle: 'भू-दृष्टि कैडेस्ट्रल एआई (BhuDrishti)',
     appSubtitle: 'स्थानिक भूमि रिकॉर्ड, सीमा सीमांकन एवं विवाद समाधान (डिजिटल इंडिया भूमि आधुनिकीकरण / स्वामित्व योजना)',
     tabMap: 'इंटरैक्टिव भू-नक्शा (GIS)',
     tabRegistry: 'खसरा एवं खतौनी रजिस्टर',
@@ -276,7 +276,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 आधिकारिक प्रस्तुति',
   },
   bn: {
-    appTitle: 'ভূ-দৃষ্টি ক্যাডাস্ট্রাল এআই (TerraGIS)',
+    appTitle: 'ভূ-দৃষ্টি ক্যাডাস্ট্রাল এআই (BhuDrishti)',
     appSubtitle: 'স্থানিক ভূমি রেকর্ড ও সীমানা বিরোধ নিষ্পত্তি (DILRMP / স্বামিত্ব প্রকল্প)',
     tabMap: 'ইন্টারেক্টিভ ভৌগোলিক মানচিত্র',
     tabRegistry: 'খতিয়ান ও দাগ নম্বর রেজিস্ট্রি',
@@ -319,7 +319,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 ভেরিফাইড ডেক',
   },
   mr: {
-    appTitle: 'भू-दृष्टी कॅडॅस्ट्रल एआय (TerraGIS)',
+    appTitle: 'भू-दृष्टी कॅडॅस्ट्रल एआय (BhuDrishti)',
     appSubtitle: 'स्थानिक जमीन अभिलेख, सातबारा सीमांकन व वाद निवारण (ई-फेरफार / स्वामित्व योजना)',
     tabMap: 'परस्परसंवादी भू-नकाशा',
     tabRegistry: 'सातबारा व भूखंड नोंदवही',
@@ -362,7 +362,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 प्रमाणित सादरीकरण',
   },
   te: {
-    appTitle: 'భూ-దృష్టి కాడాస్ట్రల్ AI (TerraGIS)',
+    appTitle: 'భూ-దృష్టి కాడాస్ట్రల్ AI (BhuDrishti)',
     appSubtitle: 'భౌగోళిక భూ రికార్డులు, సరిహద్దుల నిర్ధారణ మరియు వివాద పరిష్కారం (DILRMP / స్వామిత్వ పథకం)',
     tabMap: 'ఇంటరాక్టివ్ భూమి మ్యాప్',
     tabRegistry: 'పట్టాదారు పాస్‌బుక్ & సర్వే రిజిస్ట్రీ',
@@ -405,7 +405,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 ధృవీకరించబడింది',
   },
   ta: {
-    appTitle: 'பூ-திருஷ்டி நில ஆவண AI (TerraGIS)',
+    appTitle: 'பூ-திருஷ்டி நில ஆவண AI (BhuDrishti)',
     appSubtitle: 'நில எல்லை நிர்ணயம் மற்றும் சர்ச்சை தீர்வு தளம் (DILRMP / சுவாமித்வா திட்டம்)',
     tabMap: 'வரைபடம் (GIS)',
     tabRegistry: 'பட்டா & சர்வே பதிவேடு',
@@ -448,7 +448,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 சரிபார்க்கப்பட்டது',
   },
   gu: {
-    appTitle: 'ભૂ-દ્રષ્ટિ કડાસ્ટ્રલ AI (TerraGIS)',
+    appTitle: 'ભૂ-દ્રષ્ટિ કડાસ્ટ્રલ AI (BhuDrishti)',
     appSubtitle: 'જમીન રેકોર્ડ્સ સીમાંકન અને વિવાદ નિવારણ (DILRMP / સ્વામિત્વ યોજના)',
     tabMap: 'ઇન્ટરેક્ટિવ નકશો',
     tabRegistry: '7/12 અને સર્વે રજિસ્ટર',
@@ -491,7 +491,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 અધિકૃત ડેક',
   },
   kn: {
-    appTitle: 'ಭೂ-ದೃಷ್ಟಿ ಕ್ಯಾಡಾಸ್ಟ್ರಲ್ AI (TerraGIS)',
+    appTitle: 'ಭೂ-ದೃಷ್ಟಿ ಕ್ಯಾಡಾಸ್ಟ್ರಲ್ AI (BhuDrishti)',
     appSubtitle: 'ಭೂದಾಖಲೆಗಳು, ಗಡಿ ಗುರುತಿಸುವಿಕೆ ಮತ್ತು ವಿವಾದ ಪರಿಹಾರ (ಭೂಮಿ / ಸ್ವಾಮಿತ್ವ ಯೋಜನೆ)',
     tabMap: 'ನಕ್ಷೆ (GIS)',
     tabRegistry: 'ಆರ್‌ಟಿಸಿ (ಪಹಣಿ) ಮತ್ತು ಸರ್ವೆ ನಂ ನೋಂದಣಿ',
@@ -534,7 +534,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 ಪರಿಶೀಲಿಸಲಾಗಿದೆ',
   },
   ml: {
-    appTitle: 'ഭൂ-ദൃഷ്ടി കാഡസ്ട്രൽ AI (TerraGIS)',
+    appTitle: 'ഭൂ-ദൃഷ്ടി കാഡസ്ട്രൽ AI (BhuDrishti)',
     appSubtitle: 'ഭൂമി രേഖകൾ, അതിർത്തി നിർണ്ണയം, തർക്ക പരിഹാരം (ഡിജിറ്റൽ റീസർവേ / സ്വാമിത്വ)',
     tabMap: 'ഭൂപടം (GIS)',
     tabRegistry: 'തണ്ടപ്പേര് & സർവേ രജിസ്ട്രി',
@@ -577,7 +577,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 സ്ഥിരീകരിച്ചത്',
   },
   pa: {
-    appTitle: 'ਭੂ-ਦ੍ਰਿਸ਼ਟੀ ਕੈਡਾਸਟ੍ਰਲ AI (TerraGIS)',
+    appTitle: 'ਭੂ-ਦ੍ਰਿਸ਼ਟੀ ਕੈਡਾਸਟ੍ਰਲ AI (BhuDrishti)',
     appSubtitle: 'ਜ਼ਮੀਨੀ ਰਿਕਾਰਡ, ਸੀਮਾਬੰਦੀ ਅਤੇ ਝਗੜਾ ਨਿਪਟਾਰਾ (ਜਮ੍ਹਾਬੰਦੀ / ਸਵਾਮਿਤਵ ਯੋਜਨਾ)',
     tabMap: 'ਨਕਸ਼ਾ (GIS)',
     tabRegistry: 'ਖਸਰਾ ਤੇ ਜਮ੍ਹਾਬੰਦੀ ਰਜਿਸਟਰ',
@@ -620,7 +620,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 ਸਰਕਾਰੀ ਪੇਸ਼ਕਾਰੀ',
   },
   or: {
-    appTitle: 'ଭୂ-ଦୃଷ୍ଟି କାଡାଷ୍ଟ୍ରାଲ AI (TerraGIS)',
+    appTitle: 'ଭୂ-ଦୃଷ୍ଟି କାଡାଷ୍ଟ୍ରାଲ AI (BhuDrishti)',
     appSubtitle: 'ଭୂମି ରେକର୍ଡ, ସୀମା ନିର୍ଦ୍ଧାରଣ ଏବଂ ବିବାଦ ସମାଧାନ (DILRMP / ସ୍ୱାମିତ୍ୱ)',
     tabMap: 'ନକ୍ସା (GIS)',
     tabRegistry: 'ଖତିଆନ୍ ଏବଂ ପ୍ଲଟ୍ ରେଜିଷ୍ଟ୍ରି',
@@ -663,7 +663,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 ଯାଞ୍ଚ ହୋଇଛି',
   },
   es: {
-    appTitle: 'TerraGIS Catastro IA',
+    appTitle: 'BhuDrishti Catastro IA',
     appSubtitle: 'Gestión Catastral de Tierras y Resolución de Conflictos Espaciales',
     tabMap: 'Mapa GIS Interactivo',
     tabRegistry: 'Registro Parcelario',
@@ -706,7 +706,7 @@ export const DICTIONARY: Record<string, Partial<Translations>> = {
     pitchDeckBadge: 'SIH 2024 Verificado',
   },
   fr: {
-    appTitle: 'TerraGIS Cadastre IA',
+    appTitle: 'BhuDrishti Cadastre IA',
     appSubtitle: 'Gestion Spatiale Foncière et Résolution des Litiges de Bornage',
     tabMap: 'Carte SIG Interactive',
     tabRegistry: 'Registre Parcellaire',
@@ -761,8 +761,8 @@ const KEY_ALIASES: Record<string, keyof Translations> = {
 };
 
 const DEFAULT_FALLBACKS: Record<string, string> = {
-  appName: 'TerraGIS Cadastre AI',
-  appTitle: 'TerraGIS Cadastre AI',
+  appName: 'BhuDrishti Cadastre',
+  appTitle: 'BhuDrishti Cadastre',
   appSubtitle: 'Spatial Land Records & Cadastral Dispute Resolution (DILRMP / SVAMITVA)',
   mapView: 'GIS Map',
   tabMap: 'GIS Map',
